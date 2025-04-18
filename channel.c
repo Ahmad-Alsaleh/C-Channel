@@ -3,19 +3,16 @@
 #include <stdlib.h>
 
 #include "channel.h"
+#include "deque.h"
 #include "utils.h"
 
-// creates a mpmc bounded channel with a specific buffer size
+// initializes a mpmc bounded channel with a specific buffer size
 void channel_init(Channel *channel, size_t buffer_size) {
-  // TODO: replace this buffer thingy with a ring buffer struct, as well as
-  // channel.len.
+  int error_code;
 
-  // create buffer on the heap and handle error
-  channel->buffer = (int *)malloc(buffer_size * sizeof(int));
-  assert_value(channel->buffer != NULL, "`malloc` failed");
-
-  // set the length of the buffer (i.e. the number of items) to 0
-  channel->len = 0;
+  // create a FIFO queue
+  error_code = deque_init(&channel->buffer, buffer_size);
+  assert_value(error_code == 0, "Couldn't create the buffer of the channel");
 
   // create semaphores and handle any errors. but first, we'll unlink existing
   // named semaphores
@@ -29,15 +26,15 @@ void channel_init(Channel *channel, size_t buffer_size) {
   assert_value(channel->full_slot != SEM_FAILED,
                "Couldn't create semaphore `FULL`");
 
-  // initialize buffer mutex
-  int error_code = pthread_mutex_init(&channel->buffer_mutex, NULL);
+  // initialize buffer mutex using default attributes
+  error_code = pthread_mutex_init(&channel->buffer_mutex, NULL);
   assert_value(error_code == 0, "Couldn't initialize buffer mutex");
 }
 
 // deallocates a channel freeing all resources associated to it
 void channel_destroy(Channel *channel) {
-  // deallocate the heap
-  free(channel->buffer);
+  // deallocate the FIFO buffer
+  deque_destroy(&channel->buffer);
 
   // close and unlink semaphores and handle any errors
   int error_code;
@@ -64,19 +61,25 @@ void channel_destroy(Channel *channel) {
 void channel_send(Channel *channel, int value) {
   int error_code;
 
+  // wait for a free slot in the buffer to become available to be able to insert
+  // the new item to the buffer
   error_code = sem_wait(channel->empty_slot);
   assert_value(error_code == 0, "Couldn't wait on semaphore `EMPTY`");
 
+  // once a free slot becomes available in the buffer, require the buffer lock
+  // to manipulate the buffer without race conditions
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
 
-  // TODO: change this to buffer.push once the deque is implemented
-  channel->buffer[channel->len] = value;
-  channel->len += 1;
+  // push the new item to the end of the FIFO queue
+  deque_push(&channel->buffer, value);
 
+  // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
 
+  // signal to other threads waiting to consume an item that a new item is
+  // available in the buffer
   error_code = sem_post(channel->full_slot);
   assert_value(error_code == 0,
                "Couldn't signal semaphore `FULL`. Are you sure the "
@@ -87,19 +90,24 @@ void channel_send(Channel *channel, int value) {
 int channel_recv(Channel *channel) {
   int error_code;
 
+  // wait for an item becomes available in the buffer
   error_code = sem_wait(channel->full_slot);
   assert_value(error_code == 0, "Couldn't wait on semaphore `FULL`");
 
+  // once an item becomes available in the buffer, require the buffer lock to
+  // manipulate the buffer without race conditions
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
 
-  // TODO: change this to buffer.pop once the deque is implemented
-  channel->len -= 1;
-  int item = channel->buffer[channel->len];
+  // pop an item from the beginning of the FIFO queue
+  int item = deque_pop(&channel->buffer);
 
+  // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
 
+  // signal to other threads waiting to produce a new item that a free slot slot
+  // is available in the buffer
   error_code = sem_post(channel->empty_slot);
   assert_value(error_code == 0,
                "Couldn't signal semaphore `EMPTY`. Are you sure the "
