@@ -90,7 +90,25 @@ void channel_send(Channel *channel, int value) {
 }
 
 // consumes an item
-int channel_recv() {
-  // TOOD
-  return 0;
+int channel_recv(Channel *channel) {
+  int error_code;
+
+  error_code = sem_wait(channel->full_slot);
+  assert(error_code == 0, "Couldn't wait on semaphore `FULL`");
+
+  error_code = pthread_mutex_lock(&channel->buffer_mutex);
+  assert(error_code == 0, "Couldn't lock buffer mutex");
+
+  // TODO: change this to buffer.pop once the deque is implamented
+  channel->len -= 1;
+  int item = channel->buffer[channel->len];
+
+  error_code = pthread_mutex_unlock(&channel->buffer_mutex);
+  assert(error_code == 0, "Couldn't unlock buffer mutex");
+
+  error_code = sem_post(channel->empty_slot);
+  assert(error_code == 0, "Couldn't signal semaphore `EMPTY`. Are you sure the "
+                          "semaphore descriptor is still valid?");
+
+  return item;
 }

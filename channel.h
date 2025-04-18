@@ -30,6 +30,6 @@ void channel_destroy(Channel *channel);
 void channel_send(Channel *channel, int value);
 
 // consumes an item
-int channel_recv();
+int channel_recv(Channel *channel);
 
 #endif

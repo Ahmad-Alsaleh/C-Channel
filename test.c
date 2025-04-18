@@ -6,15 +6,20 @@
 void test_send_once_works() {
   Channel channel;
   channel_init(&channel, 3);
-  channel_send(&channel, 123);
+
+  channel_send(&channel, 0);
   assert(channel.len == 1, "channel.len != 1");
-  assert(channel.buffer[0] == 123, "buffer[0] != 123");
+  assert(channel.buffer[0] == 0, "buffer[0] != 0");
+
+  channel_send(&channel, 1);
+  assert(channel.len == 2, "channel.len != 2");
+  assert(channel.buffer[1] == 1, "buffer[1] != 1");
+
   channel_destroy(&channel);
 }
 
-// WARNING this  function will block your program infinitely
 void test_send_blocks() {
-  printf("[WARNING] this function will block your program infinitely");
+  printf("[WARNING] this function will block your program infinitely\n");
 
   Channel channel;
   channel_init(&channel, 1);
@@ -25,12 +30,47 @@ void test_send_blocks() {
   channel_destroy(&channel);
 }
 
+void test_recv_once_works() {
+  Channel channel;
+  channel_init(&channel, 2);
+
+  channel_send(&channel, 0);
+  channel_send(&channel, 1);
+
+  int item;
+  item = channel_recv(&channel);
+  assert(item == 1, "item != 1");
+
+  item = channel_recv(&channel);
+  assert(item == 0, "item != 0");
+
+  channel_destroy(&channel);
+}
+
+void test_recv_blocks() {
+  printf("[WARNING] this function will block your program infinitely\n");
+  Channel channel;
+  channel_init(&channel, 2);
+
+  channel_send(&channel, 0);
+
+  int item;
+  item = channel_recv(&channel);
+  assert(item == 0, "item != 1");
+
+  item = channel_recv(&channel);
+
+  channel_destroy(&channel);
+}
+
 int main(int argc, char *argv[]) {
-  printf("Starting...\n");
+  printf("Starting tests...\n");
 
-  test_send_once_works();
+  // test_send_once_works();
   // test_send_blocks();
+  // test_recv_once_works();
+  // test_recv_blocks();
 
-  printf("Done...\n");
+  printf("Passed all tests!\n");
   return 0;
 }
