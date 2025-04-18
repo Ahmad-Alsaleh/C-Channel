@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "channel.h"
+#include "utils.h"
 
 // tests...
 void test_send_once_works() {
@@ -8,12 +9,12 @@ void test_send_once_works() {
   channel_init(&channel, 3);
 
   channel_send(&channel, 0);
-  assert(channel.len == 1, "channel.len != 1");
-  assert(channel.buffer[0] == 0, "buffer[0] != 0");
+  assert_value(channel.len == 1, "channel.len != 1");
+  assert_value(channel.buffer[0] == 0, "buffer[0] != 0");
 
   channel_send(&channel, 1);
-  assert(channel.len == 2, "channel.len != 2");
-  assert(channel.buffer[1] == 1, "buffer[1] != 1");
+  assert_value(channel.len == 2, "channel.len != 2");
+  assert_value(channel.buffer[1] == 1, "buffer[1] != 1");
 
   channel_destroy(&channel);
 }
@@ -39,10 +40,10 @@ void test_recv_once_works() {
 
   int item;
   item = channel_recv(&channel);
-  assert(item == 1, "item != 1");
+  assert_value(item == 1, "item != 1");
 
   item = channel_recv(&channel);
-  assert(item == 0, "item != 0");
+  assert_value(item == 0, "item != 0");
 
   channel_destroy(&channel);
 }
@@ -56,7 +57,7 @@ void test_recv_blocks() {
 
   int item;
   item = channel_recv(&channel);
-  assert(item == 0, "item != 1");
+  assert_value(item == 0, "item != 1");
 
   item = channel_recv(&channel);
 
