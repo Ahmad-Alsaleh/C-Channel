@@ -34,9 +34,9 @@ void channel_init(Channel *channel, size_t buffer_size) {
   assert_value(error_code == 0, "Couldn't initialize buffer mutex");
 }
 
-// deallocates a channel freeing all resouces associated to it
+// deallocates a channel freeing all resources associated to it
 void channel_destroy(Channel *channel) {
-  // deallocat the heap
+  // deallocate the heap
   free(channel->buffer);
 
   // close and unlink semaphores and handle any errors
@@ -53,11 +53,11 @@ void channel_destroy(Channel *channel) {
   error_code = sem_unlink("FULL");
   assert_value(error_code == 0, "Couldn't unlink semaphore `FULL`");
 
-  // free the resouces of the mutex
+  // free the resources of the mutex
   error_code = pthread_mutex_destroy(&channel->buffer_mutex);
   assert_value(
       error_code == 0,
-      "Couldn't distroy buffer mutex. Are you sure the mutex is unlocked?");
+      "Couldn't destroy buffer mutex. Are you sure the mutex is unlocked?");
 }
 
 // produces an item
@@ -70,7 +70,7 @@ void channel_send(Channel *channel, int value) {
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
 
-  // TODO: change this to buffer.push once the deque is implamented
+  // TODO: change this to buffer.push once the deque is implemented
   channel->buffer[channel->len] = value;
   channel->len += 1;
 
@@ -93,7 +93,7 @@ int channel_recv(Channel *channel) {
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
 
-  // TODO: change this to buffer.pop once the deque is implamented
+  // TODO: change this to buffer.pop once the deque is implemented
   channel->len -= 1;
   int item = channel->buffer[channel->len];
 
