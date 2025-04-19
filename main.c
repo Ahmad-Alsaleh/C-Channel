@@ -14,17 +14,23 @@ void *producer_1_routine(void *channel) {
 
 void *producer_2_routine(void *channel) {
   for (int i = 5; i < 10; ++i) {
-    sleep(1); // pretend some work is being done
+    sleep(1); // pretend some work is being done to generate the item
     channel_send((Channel *)channel, i, "producer 2");
   }
 
   return NULL;
 }
 
-void *consumer_routine(void *channel) {
+void *consumer_1_routine(void *channel) {
   while (true) {
-    int item = channel_recv((Channel *)channel, "consumer");
-    sleep(2); // pretend some work is being done
+    int item = channel_recv((Channel *)channel, "consumer 1");
+  }
+}
+
+void *consumer_2_routine(void *channel) {
+  while (true) {
+    int item = channel_recv((Channel *)channel, "consumer 2");
+    sleep(2); // pretend some work is being done to process the item
   }
 }
 
@@ -38,12 +44,16 @@ int main(int argc, char *argv[]) {
   pthread_t producer_2_thrd;
   pthread_create(&producer_2_thrd, NULL, producer_2_routine, (void *)&channel);
 
-  pthread_t consumer_thrd;
-  pthread_create(&consumer_thrd, NULL, consumer_routine, (void *)&channel);
+  pthread_t consumer_1_thrd;
+  pthread_create(&consumer_1_thrd, NULL, consumer_1_routine, (void *)&channel);
+
+  pthread_t consumer_2_thrd;
+  pthread_create(&consumer_1_thrd, NULL, consumer_2_routine, (void *)&channel);
 
   pthread_join(producer_1_thrd, NULL);
   pthread_join(producer_2_thrd, NULL);
-  pthread_join(consumer_thrd, NULL);
+  pthread_join(consumer_1_thrd, NULL);
+  pthread_join(consumer_2_thrd, NULL);
 
   channel_destroy(&channel);
 
