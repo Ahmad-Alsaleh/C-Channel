@@ -17,7 +17,7 @@ typedef struct {
 
 void channel_init(Channel *channel, size_t buffer_size);
 void channel_destroy(Channel *channel);
-void channel_send(Channel *channel, int value);
-int channel_recv(Channel *channel);
+void channel_send(Channel *channel, int value, bool log);
+int channel_recv(Channel *channel, bool log);
 
 #endif

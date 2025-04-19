@@ -1,6 +1,5 @@
 #include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "channel.h"
 #include "deque.h"
@@ -57,8 +56,8 @@ void channel_destroy(Channel *channel) {
       "Couldn't destroy buffer mutex. Are you sure the mutex is unlocked?");
 }
 
-// produces an item
-void channel_send(Channel *channel, int value) {
+// produces an item. if `log` is true, the consumed item will be printed
+void channel_send(Channel *channel, int value, bool log) {
   int error_code;
 
   // wait for a free slot in the buffer to become available to be able to insert
@@ -78,6 +77,9 @@ void channel_send(Channel *channel, int value) {
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
 
+  if (log)
+    printf("[Producer] sent %d\n", value);
+
   // signal to other threads waiting to consume an item that a new item is
   // available in the buffer
   error_code = sem_post(channel->full_slot);
@@ -86,8 +88,9 @@ void channel_send(Channel *channel, int value) {
                "semaphore descriptor is still valid?");
 }
 
-// consumes an item
-int channel_recv(Channel *channel) {
+// consumes an item and returns it. if `log` is true, the consumed item will be
+// printed
+int channel_recv(Channel *channel, bool log) {
   int error_code;
 
   // wait for an item becomes available in the buffer
@@ -105,6 +108,9 @@ int channel_recv(Channel *channel) {
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
+
+  if (log)
+    printf("[Consumer] received %d\n", item);
 
   // signal to other threads waiting to produce a new item that a free slot slot
   // is available in the buffer
