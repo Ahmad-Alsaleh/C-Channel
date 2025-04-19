@@ -8,11 +8,11 @@ void test_send_once_works() {
   Channel channel;
   channel_init(&channel, 3);
 
-  channel_send(&channel, 0, false);
+  channel_send(&channel, 0, NULL);
   assert_value(channel.buffer.len == 1, "channel.len != 1");
   assert_value(channel.buffer.buffer[0] == 0, "buffer[0] != 0");
 
-  channel_send(&channel, 1, false);
+  channel_send(&channel, 1, NULL);
   assert_value(channel.buffer.len == 2, "channel.len != 2");
   assert_value(channel.buffer.buffer[1] == 1, "buffer[1] != 1");
 
@@ -25,8 +25,8 @@ void test_send_blocks() {
   Channel channel;
   channel_init(&channel, 1);
 
-  channel_send(&channel, 0, false);
-  channel_send(&channel, 1, false);
+  channel_send(&channel, 0, NULL);
+  channel_send(&channel, 1, NULL);
 
   channel_destroy(&channel);
 }
@@ -35,14 +35,14 @@ void test_recv_once_works() {
   Channel channel;
   channel_init(&channel, 2);
 
-  channel_send(&channel, 0, false);
-  channel_send(&channel, 1, false);
+  channel_send(&channel, 0, NULL);
+  channel_send(&channel, 1, NULL);
 
   int item;
-  item = channel_recv(&channel, false);
+  item = channel_recv(&channel, NULL);
   assert_value(item == 0, "item != 1");
 
-  item = channel_recv(&channel, false);
+  item = channel_recv(&channel, NULL);
   assert_value(item == 1, "item != 0");
 
   channel_destroy(&channel);
@@ -53,13 +53,13 @@ void test_recv_blocks() {
   Channel channel;
   channel_init(&channel, 2);
 
-  channel_send(&channel, 0, false);
+  channel_send(&channel, 0, NULL);
 
   int item;
-  item = channel_recv(&channel, false);
+  item = channel_recv(&channel, NULL);
   assert_value(item == 0, "item != 1");
 
-  item = channel_recv(&channel, false);
+  item = channel_recv(&channel, NULL);
 
   channel_destroy(&channel);
 }
