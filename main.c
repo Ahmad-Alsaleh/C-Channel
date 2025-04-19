@@ -7,11 +7,11 @@
 #include "utils.h"
 
 #define NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD 10
-#define NUM_OF_ITEMS_TO_CONSUME_PER_THREAD 20
 
 typedef struct {
   Channel *channel;
   int id;
+  int n_items_to_consume;
 } ThreadArg;
 
 void *producer_routine(void *arg) {
@@ -34,17 +34,17 @@ void *producer_routine(void *arg) {
 
 void *consumer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
-  int values[NUM_OF_ITEMS_TO_CONSUME_PER_THREAD];
-  for (int i = 0; i < NUM_OF_ITEMS_TO_CONSUME_PER_THREAD; ++i) {
+  int *values = (int *)malloc(thread_arg->n_items_to_consume * sizeof(int));
+  for (int i = 0; i < thread_arg->n_items_to_consume; ++i) {
     values[i] = channel_recv(thread_arg->channel, thread_arg->id);
     // sleep to pretend some work is being done to process the item
     sleep(rand() % 4);
   }
 
   printf("Consumer #%d finished. Items recieved: ", thread_arg->id);
-  for (int i = 0; i < NUM_OF_ITEMS_TO_CONSUME_PER_THREAD - 1; ++i)
+  for (int i = 0; i < thread_arg->n_items_to_consume - 1; ++i)
     printf("%d, ", values[i]);
-  printf("%d\n", values[NUM_OF_ITEMS_TO_CONSUME_PER_THREAD - 1]);
+  printf("%d\n", values[thread_arg->n_items_to_consume - 1]);
 
   return NULL;
 }
@@ -90,6 +90,9 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < n_consumers; ++i) {
     consumers_args[i].channel = &channel;
     consumers_args[i].id = i;
+    consumers_args[i].n_items_to_consume =
+        n_producers * NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD / n_consumers;
+
     error_code = pthread_create(&consumers[i], NULL, consumer_routine,
                                 &consumers_args[i]);
     assert_value(error_code == 0, "Failed to create consumer thread");
