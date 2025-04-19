@@ -68,8 +68,11 @@ int main(int argc, char *argv[]) {
   Channel channel;
   channel_init(&channel, buffer_size);
 
+  // create two thread pools, one for producers and the other for consumers
   pthread_t *producers = (pthread_t *)malloc(n_producers * sizeof(pthread_t));
   pthread_t *consumers = (pthread_t *)malloc(n_consumers * sizeof(pthread_t));
+
+  // create the arguments that will be provided to the thread functions
   ThreadArg *producers_args =
       (ThreadArg *)malloc(n_producers * sizeof(ThreadArg));
   ThreadArg *consumers_args =
