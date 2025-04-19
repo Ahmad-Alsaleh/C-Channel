@@ -1,6 +1,6 @@
 # Multithreaded Producer-Consumer Application
 
-Short description of what the project does and its main features.
+A C implementation of a many-producer, many-consumer (mpmc) channel using mutexes and semaphores
 
 ## Prerequisites
 
@@ -27,9 +27,21 @@ Where:
 
 ### Expected Output
 
-The program will display and return:
-- Some calculation based on the input parameters
-- Logs or statuses indicating progress
+The program will display something like the following:
+
+```text
+[Producer #1] sent 10
+[Producer #0] sent 12
+[Consumer #0] received 10
+[Consumer #1] received 11
+[Producer #2] sent 11
+[Consumer #2] received 12
+...
+Producer #1 finished. Items sent: all numbers between 10 and 19
+...
+Consumer #0 finished. Items recieved: 10, 13, 18, 38
+...
+```
 
 ## Testing
 
