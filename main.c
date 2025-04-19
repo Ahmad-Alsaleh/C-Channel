@@ -6,6 +6,9 @@
 #include "channel.h"
 #include "utils.h"
 
+#define NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD 10
+#define NUM_OF_ITEMS_TO_CONSUME_PER_THREAD 20
+
 typedef struct {
   Channel *channel;
   int id;
@@ -13,24 +16,37 @@ typedef struct {
 
 void *producer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
-  for (int i = 0; i < 10; ++i) {
-    int item = i + 10 * thread_arg->id;
-    if (thread_arg->id % 2 == 0)
-      sleep(rand() % 3 + 1); // sleep between 1 and 3 seconds
-    // printf("producer %d prepared item with id #%d\n", thread_arg->id, item);
+  int first_item = NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD * thread_arg->id;
+  int last_item = first_item + NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD - 1;
+  for (int item = first_item; item <= last_item; ++item) {
+    if (thread_arg->id % 2 == 0) {
+      // sleep pretend some work is being done to create the new item
+      sleep(rand() % 3 + 1);
+    }
     channel_send(thread_arg->channel, item, thread_arg->id);
   }
+
+  printf("Producer #%d finished. Items sent: all numbers between %d and %d\n",
+         thread_arg->id, first_item, last_item);
+
   return NULL;
 }
 
 void *consumer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
-  while (true) {
-    int item = channel_recv(thread_arg->channel, thread_arg->id);
-    sleep(rand() % 5); // sleep between 0 and 3 seconds to pretend some work is
-                       // being done to process the item
-    // printf("consumer %d finished process item %d\n", thread_arg->id, item);
+  int values[NUM_OF_ITEMS_TO_CONSUME_PER_THREAD];
+  for (int i = 0; i < NUM_OF_ITEMS_TO_CONSUME_PER_THREAD; ++i) {
+    values[i] = channel_recv(thread_arg->channel, thread_arg->id);
+    // sleep to pretend some work is being done to process the item
+    sleep(rand() % 4);
   }
+
+  printf("Consumer #%d finished. Items recieved: ", thread_arg->id);
+  for (int i = 0; i < NUM_OF_ITEMS_TO_CONSUME_PER_THREAD - 1; ++i)
+    printf("%d, ", values[i]);
+  printf("%d\n", values[NUM_OF_ITEMS_TO_CONSUME_PER_THREAD - 1]);
+
+  return NULL;
 }
 
 int main(int argc, char *argv[]) {
