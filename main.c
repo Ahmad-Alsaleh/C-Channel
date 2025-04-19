@@ -1,59 +1,88 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "channel.h"
+#include "utils.h"
 
-void *producer_1_routine(void *channel) {
+typedef struct {
+  Channel *channel;
+  int id;
+} Foo;
+
+void *fast_producer_routine(void *channel) {
   for (int i = 0; i < 5; ++i) {
-    channel_send((Channel *)channel, i, "producer 1");
+    channel_send((Channel *)channel, i, "fast producer");
   }
-
   return NULL;
 }
 
-void *producer_2_routine(void *channel) {
-  for (int i = 5; i < 10; ++i) {
+void *slow_producer_routine(void *channel) {
+  for (int i = 5; i < 100; ++i) {
     sleep(1); // pretend some work is being done to generate the item
-    channel_send((Channel *)channel, i, "producer 2");
+    channel_send((Channel *)channel, i, "slow producer");
   }
-
   return NULL;
 }
 
-void *consumer_1_routine(void *channel) {
+void *fast_consumer_routine(void *channel) {
   while (true) {
-    int item = channel_recv((Channel *)channel, "consumer 1");
+    channel_recv((Channel *)channel, "fast consumer");
   }
 }
 
-void *consumer_2_routine(void *channel) {
+void *slow_consumer_routine(void *channel) {
   while (true) {
-    int item = channel_recv((Channel *)channel, "consumer 2");
+    channel_recv((Channel *)channel, "slow consumer");
     sleep(2); // pretend some work is being done to process the item
   }
 }
 
 int main(int argc, char *argv[]) {
+  assert_value(argc == 4,
+               "Please pass number of producers, number of consumers, and the "
+               "buffer_size. E.g.: ./main 3 2 10");
+
+  int n_producers = atoi(argv[1]);
+  int n_consumers = atoi(argv[2]);
+  int buffer_size = atoi(argv[3]);
+
+  int n_fast_producers = n_producers / 2;
+  int n_slow_producers = n_producers - n_fast_producers;
+
+  int n_fast_consumers = n_consumers / 2;
+  int n_slow_consumers = n_consumers - n_fast_consumers;
+
+  printf("\nUsing:\n"
+         "%d producers (%d fast and %d slow)\n"
+         "%d consumers (%d fast and %d slow)\n"
+         "%d buffer slots\n"
+         "------------------------------------\n",
+         n_producers, n_fast_producers, n_slow_producers, n_consumers,
+         n_fast_consumers, n_slow_consumers, buffer_size);
+
   Channel channel;
-  channel_init(&channel, 3);
+  channel_init(&channel, buffer_size);
 
-  pthread_t producer_1_thrd;
-  pthread_create(&producer_1_thrd, NULL, producer_1_routine, (void *)&channel);
+  pthread_t *thread_pool =
+      (pthread_t *)malloc((n_producers + n_consumers) * sizeof(pthread_t));
 
-  pthread_t producer_2_thrd;
-  pthread_create(&producer_2_thrd, NULL, producer_2_routine, (void *)&channel);
+  int i = 0;
+  for (int j = 0; j < n_fast_producers; ++j)
+    pthread_create(&thread_pool[i++], NULL, fast_producer_routine, &channel);
 
-  pthread_t consumer_1_thrd;
-  pthread_create(&consumer_1_thrd, NULL, consumer_1_routine, (void *)&channel);
+  for (int j = 0; j < n_slow_producers; ++j)
+    pthread_create(&thread_pool[i++], NULL, slow_producer_routine, &channel);
 
-  pthread_t consumer_2_thrd;
-  pthread_create(&consumer_1_thrd, NULL, consumer_2_routine, (void *)&channel);
+  for (int j = 0; j < n_fast_consumers; ++j)
+    pthread_create(&thread_pool[i++], NULL, fast_consumer_routine, &channel);
 
-  pthread_join(producer_1_thrd, NULL);
-  pthread_join(producer_2_thrd, NULL);
-  pthread_join(consumer_1_thrd, NULL);
-  pthread_join(consumer_2_thrd, NULL);
+  for (int j = 0; j < n_slow_consumers; ++j)
+    pthread_create(&thread_pool[i++], NULL, slow_consumer_routine, &channel);
+
+  for (int i = 0; i < n_producers + n_consumers; ++i)
+    pthread_join(thread_pool[i], NULL);
 
   channel_destroy(&channel);
 

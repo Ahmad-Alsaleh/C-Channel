@@ -51,4 +51,4 @@ int deque_pop(Deque *deque) {
   deque->len -= 1;
 
   return item;
-};
+}
