@@ -56,9 +56,8 @@ void channel_destroy(Channel *channel) {
       "Couldn't destroy buffer mutex. Are you sure the mutex is unlocked?");
 }
 
-// produces an item. if `log_msg` is not `NULL`, the consumed item will be
-// printed
-void channel_send(Channel *channel, int value, const char *log_msg) {
+// produces an item
+void channel_send(Channel *channel, int value, int id) {
   int error_code;
 
   // wait for a free slot in the buffer to become available to be able to insert
@@ -78,8 +77,7 @@ void channel_send(Channel *channel, int value, const char *log_msg) {
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
 
-  if (log_msg != NULL)
-    printf("[%s] sent %d\n", log_msg, value);
+  printf("[Producer #%d] sent %d\n", id, value);
 
   // signal to other threads waiting to consume an item that a new item is
   // available in the buffer
@@ -89,9 +87,8 @@ void channel_send(Channel *channel, int value, const char *log_msg) {
                "semaphore descriptor is still valid?");
 }
 
-// consumes an item and returns it. if `log` is not `NULL`, the consumed item
-// will be printed
-int channel_recv(Channel *channel, const char *log_msg) {
+// consumes an item and returns it
+int channel_recv(Channel *channel, int id) {
   int error_code;
 
   // wait for an item becomes available in the buffer
@@ -110,8 +107,7 @@ int channel_recv(Channel *channel, const char *log_msg) {
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
 
-  if (log_msg != NULL)
-    printf("[%s] received %d\n", log_msg, item);
+  printf("[Consumer #%d] received %d\n", id, item);
 
   // signal to other threads waiting to produce a new item that a free slot slot
   // is available in the buffer

@@ -9,33 +9,27 @@
 typedef struct {
   Channel *channel;
   int id;
-} Foo;
+} ThreadArg;
 
-void *fast_producer_routine(void *channel) {
-  for (int i = 0; i < 5; ++i) {
-    channel_send((Channel *)channel, i, "fast producer");
+void *producer_routine(void *arg) {
+  ThreadArg *thread_arg = (ThreadArg *)arg;
+  for (int i = 0; i < 10; ++i) {
+    int item = i + 10 * thread_arg->id;
+    if (thread_arg->id % 2 == 0)
+      sleep(rand() % 3 + 1); // sleep between 1 and 3 seconds
+    // printf("producer %d prepared item with id #%d\n", thread_arg->id, item);
+    channel_send(thread_arg->channel, item, thread_arg->id);
   }
   return NULL;
 }
 
-void *slow_producer_routine(void *channel) {
-  for (int i = 5; i < 100; ++i) {
-    sleep(1); // pretend some work is being done to generate the item
-    channel_send((Channel *)channel, i, "slow producer");
-  }
-  return NULL;
-}
-
-void *fast_consumer_routine(void *channel) {
+void *consumer_routine(void *arg) {
+  ThreadArg *thread_arg = (ThreadArg *)arg;
   while (true) {
-    channel_recv((Channel *)channel, "fast consumer");
-  }
-}
-
-void *slow_consumer_routine(void *channel) {
-  while (true) {
-    channel_recv((Channel *)channel, "slow consumer");
-    sleep(2); // pretend some work is being done to process the item
+    int item = channel_recv(thread_arg->channel, thread_arg->id);
+    sleep(rand() % 5); // sleep between 0 and 3 seconds to pretend some work is
+                       // being done to process the item
+    // printf("consumer %d finished process item %d\n", thread_arg->id, item);
   }
 }
 
@@ -48,43 +42,62 @@ int main(int argc, char *argv[]) {
   int n_consumers = atoi(argv[2]);
   int buffer_size = atoi(argv[3]);
 
-  int n_fast_producers = n_producers / 2;
-  int n_slow_producers = n_producers - n_fast_producers;
-
-  int n_fast_consumers = n_consumers / 2;
-  int n_slow_consumers = n_consumers - n_fast_consumers;
-
   printf("\nUsing:\n"
-         "%d producers (%d fast and %d slow)\n"
-         "%d consumers (%d fast and %d slow)\n"
+         "%d producers\n"
+         "%d consumers\n"
          "%d buffer slots\n"
-         "------------------------------------\n",
-         n_producers, n_fast_producers, n_slow_producers, n_consumers,
-         n_fast_consumers, n_slow_consumers, buffer_size);
+         "-----------------\n",
+         n_producers, n_consumers, buffer_size);
 
   Channel channel;
   channel_init(&channel, buffer_size);
 
-  pthread_t *thread_pool =
-      (pthread_t *)malloc((n_producers + n_consumers) * sizeof(pthread_t));
+  pthread_t *producers = (pthread_t *)malloc(n_producers * sizeof(pthread_t));
+  pthread_t *consumers = (pthread_t *)malloc(n_consumers * sizeof(pthread_t));
+  ThreadArg *producers_args =
+      (ThreadArg *)malloc(n_producers * sizeof(ThreadArg));
+  ThreadArg *consumers_args =
+      (ThreadArg *)malloc(n_consumers * sizeof(ThreadArg));
 
-  int i = 0;
-  for (int j = 0; j < n_fast_producers; ++j)
-    pthread_create(&thread_pool[i++], NULL, fast_producer_routine, &channel);
+  int error_code;
 
-  for (int j = 0; j < n_slow_producers; ++j)
-    pthread_create(&thread_pool[i++], NULL, slow_producer_routine, &channel);
+  // spawn producers threads
+  for (int i = 0; i < n_producers; ++i) {
+    producers_args[i].channel = &channel;
+    producers_args[i].id = i;
+    error_code = pthread_create(&producers[i], NULL, producer_routine,
+                                &producers_args[i]);
+    assert_value(error_code == 0, "Failed to create producer thread");
+  }
 
-  for (int j = 0; j < n_fast_consumers; ++j)
-    pthread_create(&thread_pool[i++], NULL, fast_consumer_routine, &channel);
+  // spawn consumers threads
+  for (int i = 0; i < n_consumers; ++i) {
+    consumers_args[i].channel = &channel;
+    consumers_args[i].id = i;
+    error_code = pthread_create(&consumers[i], NULL, consumer_routine,
+                                &consumers_args[i]);
+    assert_value(error_code == 0, "Failed to create consumer thread");
+  }
 
-  for (int j = 0; j < n_slow_consumers; ++j)
-    pthread_create(&thread_pool[i++], NULL, slow_consumer_routine, &channel);
+  // join on all producers threads
+  for (int i = 0; i < n_producers; ++i) {
+    error_code = pthread_join(producers[i], NULL);
+    assert_value(error_code == 0, "Couldn't join producer thread");
+  }
 
-  for (int i = 0; i < n_producers + n_consumers; ++i)
-    pthread_join(thread_pool[i], NULL);
+  // join on all consumers threads
+  for (int i = 0; i < n_consumers; ++i) {
+    error_code = pthread_join(consumers[i], NULL);
+    assert_value(error_code == 0, "Couldn't join consumer thread");
+  }
 
   channel_destroy(&channel);
+
+  // deallocates the heap allocations
+  free(producers);
+  free(consumers);
+  free(producers_args);
+  free(consumers_args);
 
   return 0;
 }
