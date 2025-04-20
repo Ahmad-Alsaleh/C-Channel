@@ -23,7 +23,7 @@ int create_pq(PriorityQueue *pq,size_t capacity){
     pq->capacity = capacity;
     return 0;
 }
-int insert(PriorityQueue *pq, int *data, int priority){
+int insert(PriorityQueue *pq, int data, int priority){
     assert_value(pq->size < pq->capacity, "Trying to insert into a full heap");
     int i = pq->size++;
     pq->heap[i].priority = priority;
@@ -40,10 +40,10 @@ int insert(PriorityQueue *pq, int *data, int priority){
 }
 
 
-int *extract_max(PriorityQueue *pq){
+int extract_max(PriorityQueue *pq){
     assert_value(pq->size>0, "Trying to extract from an empty heap");
 
-    int *out = pq->heap[0].data;
+    int out = pq->heap[0].data;
     pq->heap[0] = pq->heap[--pq->size];
 
     int i = 0;
@@ -51,8 +51,8 @@ int *extract_max(PriorityQueue *pq){
 
     // heapify after extracting
     while(1){
-        int left = 2 * i + 1;
-        int right = 2 * i + 2;
+        size_t left = 2 * i + 1;
+        size_t right = 2 * i + 2;
 
         int largest = i;
         if (left < pq->size && effective_priority(&pq->heap[left]) > effective_priority(&pq->heap[largest]))
@@ -68,6 +68,6 @@ int *extract_max(PriorityQueue *pq){
     return out;
 }
 
-void destroy(PriorityQueue *pq){
+void pq_destroy(PriorityQueue *pq){
     free(pq->heap);
 }

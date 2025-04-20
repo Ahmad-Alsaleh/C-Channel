@@ -7,23 +7,30 @@
 #include "utils.h"
 
 #define NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD 10
-
+#define MODE 1
 typedef struct {
   Channel *channel;
   int id;
   int n_items_to_consume;
+  int priority;
 } ThreadArg;
 
 void *producer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
   int first_item = NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD * thread_arg->id;
   int last_item = first_item + NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD - 1;
+  thread_arg->priority = rand () % 5 + 1; // pseudo-random from 1 to 5
+  printf("Producer #%d has priority %d.\n", thread_arg->id, thread_arg->priority);
   for (int item = first_item; item <= last_item; ++item) {
     if (thread_arg->id % 2 == 0) {
       // sleep pretend some work is being done to create the new item
       sleep(rand() % 3 + 1);
     }
-    channel_send(thread_arg->channel, item, thread_arg->id);
+    if (MODE == 0)
+      channel_send(thread_arg->channel, item, thread_arg->id);
+    else
+      pq_channel_send(thread_arg->channel, item, thread_arg->id, thread_arg->priority);
+
   }
 
   printf("Producer #%d finished. Items sent: all numbers between %d and %d\n",
@@ -50,6 +57,7 @@ void *consumer_routine(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
+  srand(time(NULL)); // seed for randomness
   assert_value(argc == 4,
                "Please pass number of producers, number of consumers, and the "
                "buffer_size. E.g.: ./main 3 2 10");

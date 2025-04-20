@@ -1,20 +1,33 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h> // for random number (priority)
+#include <time.h>
 
 #include "channel.h"
 #include "deque.h"
+#include "priorityQueue.h"
 #include "utils.h"
 
 // for now, added <fcntl.h> to include O_CREAT and O_EXCL
 #include <fcntl.h>
 
+#define MODE 1 // 0 for deque, 1 for priority queue
 // initializes a mpmc bounded channel with a specific buffer size
 void channel_init(Channel *channel, size_t buffer_size) {
   int error_code;
 
+  channel->mode = MODE;
+  
   // create a FIFO queue
-  error_code = deque_init(&channel->buffer, buffer_size);
-  assert_value(error_code == 0, "Couldn't create the buffer of the channel");
+  if(channel->mode == 0){
+    error_code = deque_init(&channel->buffer, buffer_size);
+    assert_value(error_code == 0, "Couldn't create the buffer of the channel");
+  }
+  else{
+ 
+    error_code = create_pq(&channel->priorityBuffer, buffer_size);
+    assert_value(error_code == 0, "Couldn't create the buffer of the channel");
+  }
 
   // create semaphores and handle any errors. but first, we'll unlink existing
   // named semaphores
@@ -35,9 +48,14 @@ void channel_init(Channel *channel, size_t buffer_size) {
 
 // deallocates a channel freeing all resources associated to it
 void channel_destroy(Channel *channel) {
-  // deallocate the FIFO buffer
-  deque_destroy(&channel->buffer);
-
+  if (channel->mode == 0){
+    // deallocate the FIFO buffer
+    deque_destroy(&channel->buffer);
+  }
+  else{
+    // deallocate max heap (priority)
+    pq_destroy(&channel->priorityBuffer);
+  }
   // close and unlink semaphores and handle any errors
   int error_code;
   error_code = sem_close(channel->empty_slot);
@@ -75,6 +93,38 @@ void channel_send(Channel *channel, int value, int id) {
 
   // push the new item to the end of the FIFO queue
   deque_push(&channel->buffer, value);
+ 
+
+  // release the buffer lock to allow other threads to acquire the lock
+  error_code = pthread_mutex_unlock(&channel->buffer_mutex);
+  assert_value(error_code == 0, "Couldn't unlock buffer mutex");
+
+  printf("[Producer #%d] sent %d\n", id, value);
+
+  // signal to other threads waiting to consume an item that a new item is
+  // available in the buffer
+  error_code = sem_post(channel->full_slot);
+  assert_value(error_code == 0,
+               "Couldn't signal semaphore `FULL`. Are you sure the "
+               "semaphore descriptor is still valid?");
+}
+// produces an item with priority
+void pq_channel_send(Channel *channel, int value, int id, int priority){
+  int error_code;
+
+  // wait for a free slot in the buffer to become available to be able to insert
+  // the new item to the buffer
+  error_code = sem_wait(channel->empty_slot);
+  assert_value(error_code == 0, "Couldn't wait on semaphore `EMPTY`");
+
+  // once a free slot becomes available in the buffer, require the buffer lock
+  // to manipulate the buffer without race conditions
+  error_code = pthread_mutex_lock(&channel->buffer_mutex);
+  assert_value(error_code == 0, "Couldn't lock buffer mutex");
+
+  //priority queue
+  insert(&channel->priorityBuffer, value, priority);
+  
 
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
@@ -102,10 +152,15 @@ int channel_recv(Channel *channel, int id) {
   // manipulate the buffer without race conditions
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
+  int item;
 
-  // pop an item from the beginning of the FIFO queue
-  int item = deque_pop(&channel->buffer);
-
+  if(channel->mode == 0){
+    // pop an item from the beginning of the FIFO queue
+    item = deque_pop(&channel->buffer);
+  }
+  else{
+    item = extract_max(&channel->priorityBuffer);
+  }
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");
