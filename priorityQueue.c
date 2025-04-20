@@ -3,7 +3,7 @@
 
 #include "priorityQueue.h"
 #include "utils.h"
-#define AGING_FACTOR 1
+#define AGING_FACTOR 0.5
 static long logical_time = 0; // updates each insert
 // Swap two elements
 void swap(PQItem *a, PQItem *b){
