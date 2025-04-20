@@ -38,7 +38,7 @@ int insert(PriorityQueue *pq, int *data, int priority){
 }
 
 double effective_priority(PQItem *item){
-    return item->priority + AGING_FACTOR * item->enqueue_time;
+    return item->priority + AGING_FACTOR * (logical_time - item->enqueue_time);
 }
 int *extract_max(PriorityQueue *pq){
     assert_value(pq->size>0, "Trying to extract from an empty heap");
