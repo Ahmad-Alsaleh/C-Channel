@@ -28,7 +28,7 @@ int insert(PriorityQueue *pq, int *data, int priority){
     pq->heap[i].data = data;
     pq->heap[i].enqueue_time = logical_time++;
 
-    while(i > 0 && pq->heap[i].priority > pq->heap[(i - 1) /2].priority){
+    while(i > 0 && effective_priority(&pq->heap[i]) > effective_priority(&pq->heap[(i - 1) /2])){
         swap(&pq->heap[i], &pq->heap[(i-1)/2]);
         i = (i-1)/2;
     }
