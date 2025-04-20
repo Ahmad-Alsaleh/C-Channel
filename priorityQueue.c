@@ -37,7 +37,7 @@ int insert(PriorityQueue *pq, int *data, int priority){
 
 }
 
-int effective_priority(PQItem *item){
+double effective_priority(PQItem *item){
     return item->priority + AGING_FACTOR * item->enqueue_time;
 }
 int *extract_max(PriorityQueue *pq){
