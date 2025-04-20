@@ -5,6 +5,9 @@
 #include "deque.h"
 #include "utils.h"
 
+// for now, added <fcntl.h> to include O_CREAT and O_EXCL
+#include <fcntl.h>
+
 // initializes a mpmc bounded channel with a specific buffer size
 void channel_init(Channel *channel, size_t buffer_size) {
   int error_code;
