@@ -32,7 +32,7 @@ int pq_create(PriorityQueue *pq, size_t capacity) {
 
 int pq_insert(PriorityQueue *pq, int data, int priority) {
   assert_value(pq->size < pq->capacity, "Trying to insert into a full heap");
-  int i = pq->size++;
+  int i = pq->size;
   pq->heap[i].priority = priority;
   pq->heap[i].data = data;
   pq->heap[i].enqueue_time = time(NULL); // time it was enqueued
@@ -43,6 +43,8 @@ int pq_insert(PriorityQueue *pq, int data, int priority) {
     i = (i - 1) / 2;
   }
 
+  pq->size += 1;
+
   // Success
   return 0;
 }
@@ -51,12 +53,12 @@ int pq_extract_max(PriorityQueue *pq) {
   assert_value(pq->size > 0, "Trying to extract from an empty heap");
 
   int out = pq->heap[0].data;
-  pq->heap[0] = pq->heap[--pq->size];
-
-  int i = 0;
+  pq->size -= 1;
+  pq->heap[0] = pq->heap[pq->size];
 
   // heapify after extracting
-  while (1) {
+  int i = 0;
+  while (true) {
     size_t left = 2 * i + 1;
     size_t right = 2 * i + 2;
 
