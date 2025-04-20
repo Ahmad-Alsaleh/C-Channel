@@ -30,6 +30,17 @@ Where:
 The program will display something like the following:
 
 ```text
+Using:
+10 producers
+5 consumers
+3 buffer slots
+-----------------
+Producer #0 has priority 4.
+Producer #1 has priority 4.
+Producer #2 has priority 2.
+Producer #6 has priority 2.
+[Producer #1] sent 10
+[Producer #1] sent 11
 [Producer #1] sent 10
 [Producer #0] sent 12
 [Consumer #0] received 10
