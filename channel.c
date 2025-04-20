@@ -14,16 +14,13 @@
 void channel_init(Channel *channel, size_t buffer_size) {
   int error_code;
 
-  channel->mode = MODE;
-
-  // create a FIFO queue
-  if (channel->mode == 0) {
+  // TODO: use macros instead of if-else
+  // create a FIFO or a priority queue
+  if (MODE == Fifo)
     error_code = deque_init(&channel->buffer, buffer_size);
-    assert_value(error_code == 0, "Couldn't create the buffer of the channel");
-  } else {
+  else
     error_code = pq_create(&channel->priorityBuffer, buffer_size);
-    assert_value(error_code == 0, "Couldn't create the buffer of the channel");
-  }
+  assert_value(error_code == 0, "Couldn't create the buffer of the channel");
 
   // create semaphores and handle any errors. but first, we'll unlink existing
   // named semaphores
@@ -44,15 +41,16 @@ void channel_init(Channel *channel, size_t buffer_size) {
 
 // deallocates a channel freeing all resources associated to it
 void channel_destroy(Channel *channel) {
-  if (channel->mode == 0) {
-    // deallocate the FIFO buffer
+  // TODO: use macros instead of if-else
+  // deallocate the FIFO or priority queue
+  if (MODE == Fifo)
     deque_destroy(&channel->buffer);
-  } else {
-    // deallocate max heap (priority)
+  else
     pq_destroy(&channel->priorityBuffer);
-  }
-  // close and unlink semaphores and handle any errors
+
   int error_code;
+
+  // close and unlink semaphores and handle any errors
   error_code = sem_close(channel->empty_slot);
   assert_value(error_code == 0, "Couldn't close semaphore `EMPTY`");
 
@@ -102,6 +100,7 @@ void channel_send(Channel *channel, int value, int id) {
                "Couldn't signal semaphore `FULL`. Are you sure the "
                "semaphore descriptor is still valid?");
 }
+
 // produces an item with priority
 void pq_channel_send(Channel *channel, int value, int id, int priority) {
   int error_code;
@@ -145,14 +144,14 @@ int channel_recv(Channel *channel, int id) {
   // manipulate the buffer without race conditions
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
-  int item;
 
-  if (channel->mode == 0) {
-    // pop an item from the beginning of the FIFO queue
+  // pop an item from the beginning of the FIFO or priority queue
+  int item;
+  if (MODE == 0)
     item = deque_pop(&channel->buffer);
-  } else {
+  else
     item = pq_extract_max(&channel->priorityBuffer);
-  }
+
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't unlock buffer mutex");

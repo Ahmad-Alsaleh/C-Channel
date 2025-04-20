@@ -15,7 +15,6 @@ typedef struct {
   sem_t *empty_slot;
   sem_t *full_slot;
   pthread_mutex_t buffer_mutex;
-  bool mode;
 } Channel;
 
 void channel_init(Channel *channel, size_t buffer_size);
