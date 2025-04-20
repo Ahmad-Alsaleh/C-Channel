@@ -1,15 +1,21 @@
 #ifndef PRIORITYQUEUE
 #define PRIORITYQUEUE
 
-#include "pqitem.h"
-#include "utils.h"
 #include <stddef.h>
 #include <time.h>
+
+#include "utils.h"
+
+typedef struct {
+  int priority;
+  time_t enqueue_time;
+  int data;
+} PQItem;
+
 typedef struct {
   PQItem *heap;
   size_t size;
   size_t capacity;
-
 } PriorityQueue;
 
 void swap(PQItem *a, PQItem *b);
