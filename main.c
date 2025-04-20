@@ -6,8 +6,14 @@
 #include "channel.h"
 #include "utils.h"
 
+typedef enum {
+  Fifo,
+  Priority,
+} Mode;
+
 #define NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD 10
-#define MODE 1
+#define MODE Priority
+
 typedef struct {
   Channel *channel;
   int id;
@@ -17,17 +23,22 @@ typedef struct {
 
 void *producer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
+
+  if (MODE == Priority) {
+    thread_arg->priority = rand() % 5 + 1; // pseudo-random from 1 to 5
+    printf("Producer #%d has priority %d.\n", thread_arg->id,
+           thread_arg->priority);
+  }
+
   int first_item = NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD * thread_arg->id;
   int last_item = first_item + NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD - 1;
-  thread_arg->priority = rand() % 5 + 1; // pseudo-random from 1 to 5
-  printf("Producer #%d has priority %d.\n", thread_arg->id,
-         thread_arg->priority);
+
   for (int item = first_item; item <= last_item; ++item) {
-    if (thread_arg->id % 2 == 0) {
-      // sleep pretend some work is being done to create the new item
+    // sleep pretend some work is being done to create the new item
+    if (thread_arg->id % 2 == 0)
       sleep(rand() % 3 + 1);
-    }
-    if (MODE == 0)
+
+    if (MODE == Fifo)
       channel_send(thread_arg->channel, item, thread_arg->id);
     else
       pq_channel_send(thread_arg->channel, item, thread_arg->id,
@@ -42,26 +53,29 @@ void *producer_routine(void *arg) {
 
 void *consumer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
-  int *values = (int *)malloc(thread_arg->n_items_to_consume * sizeof(int));
+
+  int *received_items =
+      (int *)malloc(thread_arg->n_items_to_consume * sizeof(int));
   for (int i = 0; i < thread_arg->n_items_to_consume; ++i) {
-    values[i] = channel_recv(thread_arg->channel, thread_arg->id);
+    received_items[i] = channel_recv(thread_arg->channel, thread_arg->id);
     // sleep to pretend some work is being done to process the item
     sleep(rand() % 4);
   }
 
   printf("Consumer #%d finished. Items recieved: ", thread_arg->id);
   for (int i = 0; i < thread_arg->n_items_to_consume - 1; ++i)
-    printf("%d, ", values[i]);
-  printf("%d\n", values[thread_arg->n_items_to_consume - 1]);
+    printf("%d, ", received_items[i]);
+  printf("%d\n", received_items[thread_arg->n_items_to_consume - 1]);
 
   return NULL;
 }
 
 int main(int argc, char *argv[]) {
-  srand(time(NULL)); // seed for randomness
   assert_value(argc == 4,
                "Please pass number of producers, number of consumers, and the "
                "buffer_size. E.g.: ./main 3 2 10");
+
+  srand(time(NULL)); // seed for randomness
 
   int n_producers = atoi(argv[1]);
   int n_consumers = atoi(argv[2]);
