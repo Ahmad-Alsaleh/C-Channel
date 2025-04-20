@@ -1,75 +1,72 @@
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <stdio.h>
 
 #include "priorityQueue.h"
 #include "utils.h"
 #define AGING_FACTOR 0.2
 // Swap two elements
-void swap(PQItem *a, PQItem *b){
-    PQItem temp = *a;
-    *a = *b;
-    *b = temp;
+void swap(PQItem *a, PQItem *b) {
+  PQItem temp = *a;
+  *a = *b;
+  *b = temp;
 }
-double effective_priority(PQItem *item){
-    time_t current = time(NULL);
-    return item->priority + AGING_FACTOR * difftime(current, item->enqueue_time);
+double effective_priority(PQItem *item) {
+  time_t current = time(NULL);
+  return item->priority + AGING_FACTOR * difftime(current, item->enqueue_time);
 }
 // Create a priority queue with the given capacity
-int create_pq(PriorityQueue *pq,size_t capacity){
-    pq->heap = malloc(sizeof(PQItem) * capacity);
-    if (pq->heap == NULL)
-        return -1;
-    pq->size = 0; //initialize to empty
-    pq->capacity = capacity;
-    return 0;
+int create_pq(PriorityQueue *pq, size_t capacity) {
+  pq->heap = malloc(sizeof(PQItem) * capacity);
+  if (pq->heap == NULL)
+    return -1;
+  pq->size = 0; // initialize to empty
+  pq->capacity = capacity;
+  return 0;
 }
-int insert(PriorityQueue *pq, int data, int priority){
-    assert_value(pq->size < pq->capacity, "Trying to insert into a full heap");
-    int i = pq->size++;
-    pq->heap[i].priority = priority;
-    pq->heap[i].data = data;
-    pq->heap[i].enqueue_time = time(NULL); // time it was enqueued
+int insert(PriorityQueue *pq, int data, int priority) {
+  assert_value(pq->size < pq->capacity, "Trying to insert into a full heap");
+  int i = pq->size++;
+  pq->heap[i].priority = priority;
+  pq->heap[i].data = data;
+  pq->heap[i].enqueue_time = time(NULL); // time it was enqueued
 
-    while(i > 0 && effective_priority(&pq->heap[i]) > effective_priority(&pq->heap[(i - 1) /2])){
-        swap(&pq->heap[i], &pq->heap[(i-1)/2]);
-        i = (i-1)/2;
-    }
-    // Success
-    return 0;
-
-}
-
-
-int extract_max(PriorityQueue *pq){
-    assert_value(pq->size>0, "Trying to extract from an empty heap");
-
-    int out = pq->heap[0].data;
-    pq->heap[0] = pq->heap[--pq->size];
-
-    int i = 0;
-
-
-    // heapify after extracting
-    while(1){
-        size_t left = 2 * i + 1;
-        size_t right = 2 * i + 2;
-
-        int largest = i;
-        if (left < pq->size && effective_priority(&pq->heap[left]) > effective_priority(&pq->heap[largest]))
-            largest = left;
-        if (right < pq->size && effective_priority(&pq->heap[right]) > effective_priority(&pq->heap[largest]))
-            largest = right;
-        if (largest == i)
-            break;
-        swap(&pq->heap[i], &pq->heap[largest]);
-        i = largest;
-        
-    }
-    return out;
+  while (i > 0 && effective_priority(&pq->heap[i]) >
+                      effective_priority(&pq->heap[(i - 1) / 2])) {
+    swap(&pq->heap[i], &pq->heap[(i - 1) / 2]);
+    i = (i - 1) / 2;
+  }
+  // Success
+  return 0;
 }
 
-void pq_destroy(PriorityQueue *pq){
-    free(pq->heap);
+int extract_max(PriorityQueue *pq) {
+  assert_value(pq->size > 0, "Trying to extract from an empty heap");
+
+  int out = pq->heap[0].data;
+  pq->heap[0] = pq->heap[--pq->size];
+
+  int i = 0;
+
+  // heapify after extracting
+  while (1) {
+    size_t left = 2 * i + 1;
+    size_t right = 2 * i + 2;
+
+    int largest = i;
+    if (left < pq->size && effective_priority(&pq->heap[left]) >
+                               effective_priority(&pq->heap[largest]))
+      largest = left;
+    if (right < pq->size && effective_priority(&pq->heap[right]) >
+                                effective_priority(&pq->heap[largest]))
+      largest = right;
+    if (largest == i)
+      break;
+    swap(&pq->heap[i], &pq->heap[largest]);
+    i = largest;
+  }
+  return out;
 }
+
+void pq_destroy(PriorityQueue *pq) { free(pq->heap); }

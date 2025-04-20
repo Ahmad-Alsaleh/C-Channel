@@ -19,8 +19,9 @@ void *producer_routine(void *arg) {
   ThreadArg *thread_arg = (ThreadArg *)arg;
   int first_item = NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD * thread_arg->id;
   int last_item = first_item + NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD - 1;
-  thread_arg->priority = rand () % 5 + 1; // pseudo-random from 1 to 5
-  printf("Producer #%d has priority %d.\n", thread_arg->id, thread_arg->priority);
+  thread_arg->priority = rand() % 5 + 1; // pseudo-random from 1 to 5
+  printf("Producer #%d has priority %d.\n", thread_arg->id,
+         thread_arg->priority);
   for (int item = first_item; item <= last_item; ++item) {
     if (thread_arg->id % 2 == 0) {
       // sleep pretend some work is being done to create the new item
@@ -29,8 +30,8 @@ void *producer_routine(void *arg) {
     if (MODE == 0)
       channel_send(thread_arg->channel, item, thread_arg->id);
     else
-      pq_channel_send(thread_arg->channel, item, thread_arg->id, thread_arg->priority);
-
+      pq_channel_send(thread_arg->channel, item, thread_arg->id,
+                      thread_arg->priority);
   }
 
   printf("Producer #%d finished. Items sent: all numbers between %d and %d\n",

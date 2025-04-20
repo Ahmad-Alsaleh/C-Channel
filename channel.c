@@ -17,14 +17,13 @@ void channel_init(Channel *channel, size_t buffer_size) {
   int error_code;
 
   channel->mode = MODE;
-  
+
   // create a FIFO queue
-  if(channel->mode == 0){
+  if (channel->mode == 0) {
     error_code = deque_init(&channel->buffer, buffer_size);
     assert_value(error_code == 0, "Couldn't create the buffer of the channel");
-  }
-  else{
- 
+  } else {
+
     error_code = create_pq(&channel->priorityBuffer, buffer_size);
     assert_value(error_code == 0, "Couldn't create the buffer of the channel");
   }
@@ -48,11 +47,10 @@ void channel_init(Channel *channel, size_t buffer_size) {
 
 // deallocates a channel freeing all resources associated to it
 void channel_destroy(Channel *channel) {
-  if (channel->mode == 0){
+  if (channel->mode == 0) {
     // deallocate the FIFO buffer
     deque_destroy(&channel->buffer);
-  }
-  else{
+  } else {
     // deallocate max heap (priority)
     pq_destroy(&channel->priorityBuffer);
   }
@@ -93,7 +91,6 @@ void channel_send(Channel *channel, int value, int id) {
 
   // push the new item to the end of the FIFO queue
   deque_push(&channel->buffer, value);
- 
 
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
@@ -109,7 +106,7 @@ void channel_send(Channel *channel, int value, int id) {
                "semaphore descriptor is still valid?");
 }
 // produces an item with priority
-void pq_channel_send(Channel *channel, int value, int id, int priority){
+void pq_channel_send(Channel *channel, int value, int id, int priority) {
   int error_code;
 
   // wait for a free slot in the buffer to become available to be able to insert
@@ -122,9 +119,8 @@ void pq_channel_send(Channel *channel, int value, int id, int priority){
   error_code = pthread_mutex_lock(&channel->buffer_mutex);
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
 
-  //priority queue
+  // priority queue
   insert(&channel->priorityBuffer, value, priority);
-  
 
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
@@ -154,11 +150,10 @@ int channel_recv(Channel *channel, int id) {
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
   int item;
 
-  if(channel->mode == 0){
+  if (channel->mode == 0) {
     // pop an item from the beginning of the FIFO queue
     item = deque_pop(&channel->buffer);
-  }
-  else{
+  } else {
     item = extract_max(&channel->priorityBuffer);
   }
   // release the buffer lock to allow other threads to acquire the lock

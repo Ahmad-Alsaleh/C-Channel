@@ -2,8 +2,8 @@
 
 #include "channel.h"
 #include "deque.h"
-#include "utils.h"
 #include "priorityQueue.h"
+#include "utils.h"
 
 void test_send_once_works() {
   Channel channel;
@@ -122,18 +122,18 @@ void test_insert_and_extract_max() {
 
   // Extract max should return the item with highest priority (val1)
   int *item = extract_max(&pq);
-  assert_value(*item == 100 , "Expected 100, but got a different value.");
+  assert_value(*item == 100, "Expected 100, but got a different value.");
 
   // Extract max again should return val3 (priority 2)
   item = extract_max(&pq);
-  assert_value(*item == 300 , "Expected 300, but got a different value.");
+  assert_value(*item == 300, "Expected 300, but got a different value.");
 
   // Finally, val2 (priority 1) should be returned
   item = extract_max(&pq);
-  assert_value(*item == 200 , "Expected 200, but got a different value.");
+  assert_value(*item == 200, "Expected 200, but got a different value.");
 
   // At this point, the priority queue should be empty
-  assert_value(pq.size == 0 , "Priority queue should be empty.");
+  assert_value(pq.size == 0, "Priority queue should be empty.");
 
   destroy(&pq);
 }
@@ -151,17 +151,17 @@ void test_empty_queue() {
 // Test inserting into a full priority queue (asserting failure)
 void test_full_queue() {
   PriorityQueue pq;
-  create_pq(&pq, 2);  // Queue of size 2
+  create_pq(&pq, 2); // Queue of size 2
 
   int val1 = 100, val2 = 200;
 
   insert(&pq, &val1, 3);
   insert(&pq, &val2, 1);
-  
+
   // Try inserting into a full queue (this should fail)
   int val3 = 300;
   int result = insert(&pq, &val3, 2);
-  assert_value(result == -1 , "Insert should fail when queue is full.");
+  assert_value(result == -1, "Insert should fail when queue is full.");
 
   destroy(&pq);
 }
@@ -178,12 +178,9 @@ int main() {
   // test_send_blocks();
   // test_recv_blocks();
 
-
-  test_insert_and_extract_max();  // Test normal insert and extract functionality
-  test_empty_queue();             // Test extracting from empty queue
-  test_full_queue();              // Test inserting into a full queue
-
-
+  test_insert_and_extract_max(); // Test normal insert and extract functionality
+  test_empty_queue();            // Test extracting from empty queue
+  test_full_queue();             // Test inserting into a full queue
 
   printf("Passed all tests!\n");
   return 0;
