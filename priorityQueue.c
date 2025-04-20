@@ -11,7 +11,9 @@ void swap(PQItem *a, PQItem *b){
     *a = *b;
     *b = temp;
 }
-
+double effective_priority(PQItem *item){
+    return item->priority + AGING_FACTOR * (logical_time - item->enqueue_time);
+}
 // Create a priority queue with the given capacity
 int create_pq(PriorityQueue *pq,size_t capacity){
     pq->heap = malloc(sizeof(PQItem) * capacity);
@@ -37,9 +39,7 @@ int insert(PriorityQueue *pq, int *data, int priority){
 
 }
 
-double effective_priority(PQItem *item){
-    return item->priority + AGING_FACTOR * (logical_time - item->enqueue_time);
-}
+
 int *extract_max(PriorityQueue *pq){
     assert_value(pq->size>0, "Trying to extract from an empty heap");
 
@@ -66,9 +66,6 @@ int *extract_max(PriorityQueue *pq){
         
     }
     return out;
-}
-int effective_priority(PQItem *item) {
-    return item->priority + AGING_FACTOR * (logical_time - item->enqueue_time);
 }
 
 void destroy(PriorityQueue *pq){

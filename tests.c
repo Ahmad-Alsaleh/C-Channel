@@ -122,27 +122,25 @@ void test_insert_and_extract_max() {
 
   // Extract max should return the item with highest priority (val1)
   int *item = extract_max(&pq);
-  assert(*item == 100 && "Expected 100, but got a different value.");
+  assert_value(*item == 100 , "Expected 100, but got a different value.");
 
   // Extract max again should return val3 (priority 2)
   item = extract_max(&pq);
-  assert(*item == 300 && "Expected 300, but got a different value.");
+  assert_value(*item == 300 , "Expected 300, but got a different value.");
 
   // Finally, val2 (priority 1) should be returned
   item = extract_max(&pq);
-  assert(*item == 200 && "Expected 200, but got a different value.");
+  assert_value(*item == 200 , "Expected 200, but got a different value.");
 
   // At this point, the priority queue should be empty
-  assert(pq.size == 0 && "Priority queue should be empty.");
+  assert_value(pq.size == 0 , "Priority queue should be empty.");
 
   destroy(&pq);
 }
 
-// Test when priority queue is empty
 void test_empty_queue() {
   PriorityQueue pq;
   create_pq(&pq, 10);
-
   // Try extracting from an empty priority queue (should assert)
   int *item = extract_max(&pq); // This should trigger an assertion failure
   // If it doesn't, add an assert to check this case
@@ -163,7 +161,7 @@ void test_full_queue() {
   // Try inserting into a full queue (this should fail)
   int val3 = 300;
   int result = insert(&pq, &val3, 2);
-  assert(result == -1 && "Insert should fail when queue is full.");
+  assert_value(result == -1 , "Insert should fail when queue is full.");
 
   destroy(&pq);
 }
