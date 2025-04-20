@@ -11,7 +11,7 @@ A C implementation of a many-producer, many-consumer (mpmc) channel using mutexe
 
 Compile the application with:
 ```bash
-gcc -o main main.c channel.c utils.c deque.c -pthread -Wall -Wextra -pedantic -Wno-strict-prototypes
+gcc -o main main.c channel.c utils.c deque.c priorityQueue.c -pthread -Wall -Wextra -pedantic -Wno-strict-prototypes
 ```
 
 ## Usage
