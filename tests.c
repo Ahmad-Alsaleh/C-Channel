@@ -144,7 +144,7 @@ void test_empty_queue() {
   // Try extracting from an empty priority queue (should assert)
   int *item = extract_max(&pq); // This should trigger an assertion failure
   // If it doesn't, add an assert to check this case
-  
+
   destroy(&pq);
 }
 
