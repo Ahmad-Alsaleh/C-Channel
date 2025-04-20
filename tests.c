@@ -112,24 +112,24 @@ void test_deque_circular_push_pop() {
 // Test insert and extract_max functionality
 void test_insert_and_extract_max() {
   PriorityQueue pq;
-  create_pq(&pq, 10);
+  pq_create_pq(&pq, 10);
 
   int val1 = 100, val2 = 200, val3 = 300;
 
-  insert(&pq, &val1, 3); // Insert with priority 3
-  insert(&pq, &val2, 1); // Insert with priority 1
-  insert(&pq, &val3, 2); // Insert with priority 2
+  pq_insert(&pq, &val1, 3); // Insert with priority 3
+  pq_insert(&pq, &val2, 1); // Insert with priority 1
+  pq_insert(&pq, &val3, 2); // Insert with priority 2
 
   // Extract max should return the item with highest priority (val1)
-  int *item = extract_max(&pq);
+  int *item = pq_extract_max(&pq);
   assert_value(*item == 100, "Expected 100, but got a different value.");
 
   // Extract max again should return val3 (priority 2)
-  item = extract_max(&pq);
+  item = pq_extract_max(&pq);
   assert_value(*item == 300, "Expected 300, but got a different value.");
 
   // Finally, val2 (priority 1) should be returned
-  item = extract_max(&pq);
+  item = pq_extract_max(&pq);
   assert_value(*item == 200, "Expected 200, but got a different value.");
 
   // At this point, the priority queue should be empty
@@ -140,9 +140,9 @@ void test_insert_and_extract_max() {
 
 void test_empty_queue() {
   PriorityQueue pq;
-  create_pq(&pq, 10);
+  pq_create_pq(&pq, 10);
   // Try extracting from an empty priority queue (should assert)
-  int *item = extract_max(&pq); // This should trigger an assertion failure
+  int *item = pq_extract_max(&pq); // This should trigger an assertion failure
   // If it doesn't, add an assert to check this case
 
   destroy(&pq);
@@ -151,16 +151,16 @@ void test_empty_queue() {
 // Test inserting into a full priority queue (asserting failure)
 void test_full_queue() {
   PriorityQueue pq;
-  create_pq(&pq, 2); // Queue of size 2
+  pq_create_pq(&pq, 2); // Queue of size 2
 
   int val1 = 100, val2 = 200;
 
-  insert(&pq, &val1, 3);
-  insert(&pq, &val2, 1);
+  pq_insert(&pq, &val1, 3);
+  pq_insert(&pq, &val2, 1);
 
   // Try inserting into a full queue (this should fail)
   int val3 = 300;
-  int result = insert(&pq, &val3, 2);
+  int result = pq_insert(&pq, &val3, 2);
   assert_value(result == -1, "Insert should fail when queue is full.");
 
   destroy(&pq);

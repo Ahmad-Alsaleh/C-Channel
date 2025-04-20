@@ -24,7 +24,7 @@ void channel_init(Channel *channel, size_t buffer_size) {
     assert_value(error_code == 0, "Couldn't create the buffer of the channel");
   } else {
 
-    error_code = create_pq(&channel->priorityBuffer, buffer_size);
+    error_code = pq_create_pq(&channel->priorityBuffer, buffer_size);
     assert_value(error_code == 0, "Couldn't create the buffer of the channel");
   }
 
@@ -120,7 +120,7 @@ void pq_channel_send(Channel *channel, int value, int id, int priority) {
   assert_value(error_code == 0, "Couldn't lock buffer mutex");
 
   // priority queue
-  insert(&channel->priorityBuffer, value, priority);
+  pq_insert(&channel->priorityBuffer, value, priority);
 
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);
@@ -154,7 +154,7 @@ int channel_recv(Channel *channel, int id) {
     // pop an item from the beginning of the FIFO queue
     item = deque_pop(&channel->buffer);
   } else {
-    item = extract_max(&channel->priorityBuffer);
+    item = pq_extract_max(&channel->priorityBuffer);
   }
   // release the buffer lock to allow other threads to acquire the lock
   error_code = pthread_mutex_unlock(&channel->buffer_mutex);

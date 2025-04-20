@@ -5,19 +5,23 @@
 
 #include "priorityQueue.h"
 #include "utils.h"
+
 #define AGING_FACTOR 0.2
+
 // Swap two elements
-void swap(PQItem *a, PQItem *b) {
+void pqitem_swap(PQItem *a, PQItem *b) {
   PQItem temp = *a;
   *a = *b;
   *b = temp;
 }
-double effective_priority(PQItem *item) {
+
+double pqitem_effective_priority(PQItem *item) {
   time_t current = time(NULL);
   return item->priority + AGING_FACTOR * difftime(current, item->enqueue_time);
 }
+
 // Create a priority queue with the given capacity
-int create_pq(PriorityQueue *pq, size_t capacity) {
+int pq_create(PriorityQueue *pq, size_t capacity) {
   pq->heap = malloc(sizeof(PQItem) * capacity);
   if (pq->heap == NULL)
     return -1;
@@ -25,23 +29,25 @@ int create_pq(PriorityQueue *pq, size_t capacity) {
   pq->capacity = capacity;
   return 0;
 }
-int insert(PriorityQueue *pq, int data, int priority) {
+
+int pq_insert(PriorityQueue *pq, int data, int priority) {
   assert_value(pq->size < pq->capacity, "Trying to insert into a full heap");
   int i = pq->size++;
   pq->heap[i].priority = priority;
   pq->heap[i].data = data;
   pq->heap[i].enqueue_time = time(NULL); // time it was enqueued
 
-  while (i > 0 && effective_priority(&pq->heap[i]) >
-                      effective_priority(&pq->heap[(i - 1) / 2])) {
-    swap(&pq->heap[i], &pq->heap[(i - 1) / 2]);
+  while (i > 0 && pqitem_effective_priority(&pq->heap[i]) >
+                      pqitem_effective_priority(&pq->heap[(i - 1) / 2])) {
+    pqitem_swap(&pq->heap[i], &pq->heap[(i - 1) / 2]);
     i = (i - 1) / 2;
   }
+
   // Success
   return 0;
 }
 
-int extract_max(PriorityQueue *pq) {
+int pq_extract_max(PriorityQueue *pq) {
   assert_value(pq->size > 0, "Trying to extract from an empty heap");
 
   int out = pq->heap[0].data;
@@ -55,15 +61,15 @@ int extract_max(PriorityQueue *pq) {
     size_t right = 2 * i + 2;
 
     int largest = i;
-    if (left < pq->size && effective_priority(&pq->heap[left]) >
-                               effective_priority(&pq->heap[largest]))
+    if (left < pq->size && pqitem_effective_priority(&pq->heap[left]) >
+                               pqitem_effective_priority(&pq->heap[largest]))
       largest = left;
-    if (right < pq->size && effective_priority(&pq->heap[right]) >
-                                effective_priority(&pq->heap[largest]))
+    if (right < pq->size && pqitem_effective_priority(&pq->heap[right]) >
+                                pqitem_effective_priority(&pq->heap[largest]))
       largest = right;
     if (largest == i)
       break;
-    swap(&pq->heap[i], &pq->heap[largest]);
+    pqitem_swap(&pq->heap[i], &pq->heap[largest]);
     i = largest;
   }
   return out;
