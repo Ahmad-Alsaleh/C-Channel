@@ -1,10 +1,11 @@
 #include <stddef.h>
 #include <stdlib.h>
+#include <time.h>
+#include <stdio.h>
 
 #include "priorityQueue.h"
 #include "utils.h"
-#define AGING_FACTOR 0.5
-static long logical_time = 0; // updates each insert
+#define AGING_FACTOR 0.2
 // Swap two elements
 void swap(PQItem *a, PQItem *b){
     PQItem temp = *a;
@@ -12,7 +13,8 @@ void swap(PQItem *a, PQItem *b){
     *b = temp;
 }
 double effective_priority(PQItem *item){
-    return item->priority + AGING_FACTOR * (logical_time - item->enqueue_time);
+    time_t current = time(NULL);
+    return item->priority + AGING_FACTOR * difftime(current, item->enqueue_time);
 }
 // Create a priority queue with the given capacity
 int create_pq(PriorityQueue *pq,size_t capacity){
@@ -28,7 +30,7 @@ int insert(PriorityQueue *pq, int data, int priority){
     int i = pq->size++;
     pq->heap[i].priority = priority;
     pq->heap[i].data = data;
-    pq->heap[i].enqueue_time = logical_time++;
+    pq->heap[i].enqueue_time = time(NULL); // time it was enqueued
 
     while(i > 0 && effective_priority(&pq->heap[i]) > effective_priority(&pq->heap[(i - 1) /2])){
         swap(&pq->heap[i], &pq->heap[(i-1)/2]);

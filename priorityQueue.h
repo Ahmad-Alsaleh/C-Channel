@@ -2,12 +2,14 @@
 #define PRIORITYQUEUE
 
 #include <stddef.h>
+#include <time.h>
 #include "utils.h"
 #include "pqitem.h"
 typedef struct{
     PQItem *heap;
     size_t size;
     size_t capacity;
+    
 }PriorityQueue;
 
 void swap(PQItem *a, PQItem *b);
