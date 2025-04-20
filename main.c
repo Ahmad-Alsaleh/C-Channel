@@ -4,15 +4,8 @@
 #include <unistd.h>
 
 #include "channel.h"
+#include "configs.h"
 #include "utils.h"
-
-typedef enum {
-  Fifo,
-  Priority,
-} Mode;
-
-#define NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD 10
-#define MODE Priority
 
 typedef struct {
   Channel *channel;

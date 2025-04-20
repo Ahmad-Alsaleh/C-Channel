@@ -1,17 +1,15 @@
+#include <fcntl.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h> // for random number (priority)
+#include <stdlib.h>
 #include <time.h>
 
 #include "channel.h"
+#include "configs.h"
 #include "deque.h"
 #include "priorityQueue.h"
 #include "utils.h"
 
-// for now, added <fcntl.h> to include O_CREAT and O_EXCL
-#include <fcntl.h>
-
-#define MODE 1 // 0 for deque, 1 for priority queue
 // initializes a mpmc bounded channel with a specific buffer size
 void channel_init(Channel *channel, size_t buffer_size) {
   int error_code;
@@ -23,8 +21,7 @@ void channel_init(Channel *channel, size_t buffer_size) {
     error_code = deque_init(&channel->buffer, buffer_size);
     assert_value(error_code == 0, "Couldn't create the buffer of the channel");
   } else {
-
-    error_code = pq_create_pq(&channel->priorityBuffer, buffer_size);
+    error_code = pq_create(&channel->priorityBuffer, buffer_size);
     assert_value(error_code == 0, "Couldn't create the buffer of the channel");
   }
 
