@@ -16,7 +16,9 @@ gcc -o main main.c channel.c utils.c deque.c priorityQueue.c -pthread -Wall -Wex
 
 ## Usage
 
-Run the program with sample parameters:
+1. Set the value in `configs.h`
+
+2. Run the program with sample parameters:
 ```bash
 ./main 10 5 3
 ```
@@ -58,6 +60,9 @@ Consumer #0 finished. Items recieved: 10, 13, 18, 38
 
 Compile and run the tests with:
 ```bash
-gcc -o test tests.c channel.c utils.c deque.c -pthread -Wall -Wextra -pedantic -Wno-strict-prototypes
+# compile the test file
+gcc -o test tests.c channel.c utils.c deque.c priorityQueue.c -pthread -Wall -Wextra -pedantic -Wno-strict-prototypes
+
+# run the tests
 ./test
 ```

@@ -7,6 +7,6 @@ typedef enum {
 } Mode;
 
 #define NUM_OF_ITEMS_TO_PRODUCE_PER_THREAD 10
-#define MODE Priority
+#define MODE Priority // should be Priority or Fifo (case sensitive)
 
 #endif
